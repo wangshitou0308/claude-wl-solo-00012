@@ -5,19 +5,21 @@
 
   const pat = $derived(store.activePattern);
   const confirmed = $derived(store.confirmed);
-  const rows = $derived(pat && confirmed ? nextRows(pat, confirmed.afterRow, 6) : []);
+  /** 打印卡内容只来自确认时冻结的快照，之后的花样改动不会悄悄换内容 */
+  const frozen = $derived(confirmed?.patternSnapshot ?? null);
+  const rows = $derived(frozen && confirmed ? nextRows(frozen, confirmed.afterRow, 6) : []);
 </script>
 
-{#if pat && confirmed}
+{#if confirmed && frozen}
   <div class="print-card" id="print-card">
     <header>
-      <h1>续针打印卡 · {pat.name}</h1>
+      <h1>续针打印卡 · {frozen.name}</h1>
       <p>
         确认于 {new Date(confirmed.confirmedAt).toLocaleString('zh-CN')} ｜
         花样版本 v{confirmed.patternVersion} ｜ 已完成循环第 {confirmed.afterRow} 行
       </p>
       {#if store.confirmedStale}
-        <p class="stale">⚠️ 确认之后花样又有改动（当前 v{pat.version}），本卡基于冻结的 v{confirmed.patternVersion}，请以织物为准。</p>
+        <p class="stale">⚠️ 确认之后花样又有改动（当前 v{pat?.version}），本卡仍为确认时冻结的 v{confirmed.patternVersion} 内容，请以织物为准。</p>
       {/if}
     </header>
 

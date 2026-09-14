@@ -49,6 +49,10 @@ class Store {
       if (pat) {
         this.activePatternId = pat.id;
         this.observation = session.observation;
+        // 旧数据没有快照字段：用当前花样补齐（尽力而为，版本差异仍会提示）
+        if (session.confirmed && !session.confirmed.patternSnapshot) {
+          session.confirmed.patternSnapshot = clone(pat);
+        }
         this.confirmed = session.confirmed;
         // 花样版本已变：未确认的旧定位立即失效
         this.sessionInvalid = pat.version !== session.patternVersion;
@@ -181,6 +185,7 @@ class Store {
       patternVersion: this.activePattern.version,
       observation: clone(this.observation),
       confirmedAt: Date.now(),
+      patternSnapshot: clone(this.activePattern), // 冻结花样内容，之后的改动不影响本卡
     };
     await this.persistSession();
     this.pushUndo(`确认续针点（循环第 ${afterRow} 行）`, () => {

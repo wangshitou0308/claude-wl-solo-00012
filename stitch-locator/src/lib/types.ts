@@ -86,6 +86,9 @@ export interface ConfirmedSpot {
   patternVersion: number;
   observation: Observation;
   confirmedAt: number;
+  /** 确认瞬间的花样完整快照：打印卡与恢复路径必须以此为准，
+   *  之后花样再改动也不影响已确认的内容 */
+  patternSnapshot: Pattern;
 }
 
 export interface Session {

@@ -4,21 +4,26 @@
 
   const pat = $derived(store.activePattern);
   const confirmed = $derived(store.confirmed);
+  /** 恢复路径基于确认时冻结的花样快照，之后的花样改动不影响已确认的位置 */
+  const frozen = $derived(confirmed?.patternSnapshot ?? null);
 
   let actual = $state<number | null>(null);
   let frogT = $state(1);
 
-  const expected = $derived(pat && confirmed ? rowAt(pat, confirmed.afterRow).stitchCount : 0);
-  const paths = $derived(pat && confirmed ? frogPaths(pat, confirmed.afterRow) : []);
+  const expected = $derived(frozen && confirmed ? rowAt(frozen, confirmed.afterRow).stitchCount : 0);
+  const paths = $derived(frozen && confirmed ? frogPaths(frozen, confirmed.afterRow) : []);
   const frogPath = $derived(paths.find((p) => p.t === Number(frogT)));
-  const mend = $derived(pat && confirmed && actual != null ? mendPlan(pat, confirmed.afterRow, actual) : null);
-  const cont = $derived(pat && confirmed && actual != null ? continuePlan(pat, confirmed.afterRow, actual) : null);
-  const repeats = $derived(pat && confirmed && actual != null ? affectedRepeats(pat, confirmed.afterRow, actual) : '');
+  const mend = $derived(frozen && confirmed && actual != null ? mendPlan(frozen, confirmed.afterRow, actual) : null);
+  const cont = $derived(frozen && confirmed && actual != null ? continuePlan(frozen, confirmed.afterRow, actual) : null);
+  const repeats = $derived(frozen && confirmed && actual != null ? affectedRepeats(frozen, confirmed.afterRow, actual) : '');
 </script>
 
-{#if !confirmed}
+{#if !confirmed || !frozen}
   <div class="banner warn">请先在「续针定位」页确认续针点，再使用断点恢复。</div>
-{:else if pat}
+{:else}
+  {#if store.confirmedStale}
+    <div class="banner warn">⚠️ 花样在确认后已改动（当前 v{pat?.version}）。以下路径仍按确认时冻结的 v{confirmed.patternVersion} 计算；若改动涉及这些行，请重新定位确认。</div>
+  {/if}
   <div class="panel">
     <h2>断点恢复（从循环第 {confirmed.afterRow} 行之后出发）</h2>
     <p>
